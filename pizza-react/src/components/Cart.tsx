@@ -11,6 +11,24 @@ interface CartProps {
 function Cart({ cart, onClearCart }: CartProps) {
   const total = cart.reduce((sum, item) => sum + item.price, 0);
 
+  async function handleCheckout() {
+    const order = {
+      items: cart,
+      total: total,
+      date: new Date().toISOString(),
+    };
+
+    const response = await fetch("http://localhost:5000/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(order),
+    });
+
+    const result = await response.json();
+    alert(result.message);
+    onClearCart();
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl mx-auto mt-10">
       <h2 className="text-xl font-semibold text-red-600 border-b-4 border-orange-400 inline-block pb-1 mb-4">
@@ -24,6 +42,16 @@ function Cart({ cart, onClearCart }: CartProps) {
         ))}
       </div>
       <p className="text-lg font-bold text-red-600 mt-4">Total: Rs. {total}</p>
+
+      {cart.length > 0 && (
+        <button
+          onClick={handleCheckout}
+          className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md mr-3"
+        >
+          Checkout
+        </button>
+      )}
+
       <button
         onClick={onClearCart}
         className="mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
