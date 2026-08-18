@@ -1,3 +1,6 @@
+import { useState } from "react";
+import Checkout from "./Checkout";
+
 interface CartItem {
   name: string;
   price: number;
@@ -9,9 +12,10 @@ interface CartProps {
 }
 
 function Cart({ cart, onClearCart }: CartProps) {
+  const [showCheckout, setShowCheckout] = useState(false);
   const total = cart.reduce((sum, item) => sum + item.price, 0);
 
-  async function handleCheckout() {
+  async function saveOrder() {
     const order = {
       items: cart,
       total: total,
@@ -26,6 +30,7 @@ function Cart({ cart, onClearCart }: CartProps) {
 
     const result = await response.json();
     alert(result.message);
+    setShowCheckout(false);
     onClearCart();
   }
 
@@ -45,7 +50,7 @@ function Cart({ cart, onClearCart }: CartProps) {
 
       {cart.length > 0 && (
         <button
-          onClick={handleCheckout}
+          onClick={() => setShowCheckout(true)}
           className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md mr-3"
         >
           Checkout
@@ -58,6 +63,14 @@ function Cart({ cart, onClearCart }: CartProps) {
       >
         Clear Cart
       </button>
+
+      {showCheckout && (
+        <Checkout
+          total={total}
+          onPaymentSuccess={saveOrder}
+          onCancel={() => setShowCheckout(false)}
+        />
+      )}
     </div>
   );
 }
