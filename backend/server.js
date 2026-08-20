@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
+const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 
 const app = express();
@@ -13,7 +14,7 @@ app.use(express.json());
 const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri);
 let db;
-
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 async function connectDB() {
   await client.connect();
   db = client.db("pizzaShop");
@@ -65,4 +66,17 @@ app.post("/api/orders", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+app.post("/api/orders-postgres", async (req, res) => {
+  const { customer_name, total, items } = req.body;
+
+  const { data, error } = await supabase
+    .from("orders")
+    .insert([{ customer_name, total, items: JSON.stringify(items) }]);
+
+  if (error) {
+    res.status(400).json({ message: "Failed to save order", error });
+  } else {
+    res.json({ message: "Order saved to PostgreSQL!", data });
+  }
 });

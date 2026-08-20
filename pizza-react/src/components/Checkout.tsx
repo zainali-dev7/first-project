@@ -50,29 +50,32 @@ function Checkout({ total, onPaymentSuccess, onCancel }: CheckoutProps) {
         <p className="text-gray-600 mb-4">Total: Rs. {total}</p>
 
         <input
-          type="text"
-          placeholder="Card Number (16 digits)"
-          value={cardNumber}
-          onChange={(e) => setCardNumber(e.target.value)}
-          className="w-full border border-gray-300 rounded-md p-2 mb-3"
-        />
+  type="text"
+  placeholder="Card Number (16 digits)"
+  value={cardNumber}
+  maxLength={16}
+  onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ""))}
+  className="w-full border border-gray-300 rounded-md p-2 mb-3"
+/>
 
-        <div className="flex gap-3 mb-3">
-          <input
-            type="text"
-            placeholder="MM/YY"
-            value={expiry}
-            onChange={(e) => setExpiry(e.target.value)}
-            className="w-1/2 border border-gray-300 rounded-md p-2"
-          />
-          <input
-            type="text"
-            placeholder="CVV"
-            value={cvv}
-            onChange={(e) => setCvv(e.target.value)}
-            className="w-1/2 border border-gray-300 rounded-md p-2"
-          />
-        </div>
+<div className="flex gap-3 mb-3">
+  <input
+    type="text"
+    placeholder="MM/YY"
+    value={expiry}
+    maxLength={5}
+    onChange={(e) => setExpiry(e.target.value)}
+    className="w-1/2 border border-gray-300 rounded-md p-2"
+  />
+  <input
+    type="text"
+    placeholder="CVV"
+    value={cvv}
+    maxLength={3}
+    onChange={(e) => setCvv(e.target.value.replace(/\D/g, ""))}
+    className="w-1/2 border border-gray-300 rounded-md p-2"
+  />
+</div>
 
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
