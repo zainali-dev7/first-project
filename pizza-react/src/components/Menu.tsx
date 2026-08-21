@@ -15,7 +15,7 @@ function Menu({ onAddToCart }: MenuProps) {
   const [pizzas, setPizzas] = useState<Pizza[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/menu")
+    fetch("https://first-project-production-2d14.up.railway.app/api/menu")
       .then((response) => response.json())
       .then((data) => setPizzas(data));
   }, []);

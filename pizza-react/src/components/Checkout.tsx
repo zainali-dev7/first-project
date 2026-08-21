@@ -18,7 +18,7 @@ function Checkout({ total, onPaymentSuccess, onCancel }: CheckoutProps) {
     setError("");
 
     // Step 1: Create a checkout session (mirrors Stripe's flow)
-    const sessionRes = await fetch("http://localhost:5000/api/create-checkout-session", {
+    const sessionRes = await fetch("https://first-project-production-2d14.up.railway.app/api/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount: total }),
@@ -26,7 +26,7 @@ function Checkout({ total, onPaymentSuccess, onCancel }: CheckoutProps) {
     const session = await sessionRes.json();
 
     // Step 2: Confirm payment with card details
-    const confirmRes = await fetch("http://localhost:5000/api/confirm-payment", {
+    const confirmRes = await fetch("https://first-project-production-2d14.up.railway.app/api/confirm-payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId: session.id, cardNumber }),
