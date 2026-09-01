@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 
@@ -63,7 +65,17 @@ app.post("/api/orders", async (req, res) => {
   await db.collection("orders").insertOne(newOrder);
   res.json({ message: "Order saved successfully!" });
 });
-
+app.post("/api/orders-prisma", async (req, res) => {
+  const { customer_name, total, items } = req.body;
+  try {
+    const order = await prisma.order.create({
+      data: { customer_name, total, items: JSON.stringify(items) },
+    });
+    res.json({ message: "Order saved via Prisma!", order });
+  } catch (error) {
+    res.status(400).json({ message: "Failed", error: error.message });
+  }
+});
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
