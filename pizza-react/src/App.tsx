@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Menu from "./components/Menu";
+import AIAssistant from "./components/AIAssistant";
 import Cart from "./components/Cart";
 import "./style.css";
 
@@ -33,7 +34,7 @@ function App() {
         </h2>
         <Menu onAddToCart={handleAddToCart} />
       </section>
-
+<AIAssistant />
       <Cart cart={cart} onClearCart={handleClearCart} />
     </div>
   );

@@ -8,7 +8,7 @@ const { createClient } = require("@supabase/supabase-js");
 const fs = require("fs");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -59,6 +59,32 @@ app.post("/api/confirm-payment", (req, res) => {
   } else {
     res.status(400).json({ status: "failed", message: "Invalid card details" });
   }
+});
+// Simulates an AI assistant. In production, this would call Claude API:
+// const anthropic = require("@anthropic-ai/sdk");
+app.post("/api/ai-suggest", async (req, res) => {
+  const { message } = req.body;
+  const menuData = fs.readFileSync("menu.json", "utf-8");
+  const pizzas = JSON.parse(menuData);
+
+  const lowerMsg = message.toLowerCase();
+  let reply = "";
+  let suggested = null;
+
+  if (lowerMsg.includes("cheese") || lowerMsg.includes("simple")) {
+    suggested = pizzas.find((p) => p.name.includes("Cheese"));
+    reply = `I'd recommend our ${suggested.name} — classic, simple, and always a favorite!`;
+  } else if (lowerMsg.includes("spicy") || lowerMsg.includes("meat")) {
+    suggested = pizzas.find((p) => p.name.includes("Pepperoni"));
+    reply = `You'd love our ${suggested.name} — packed with flavor!`;
+  } else if (lowerMsg.includes("veg") || lowerMsg.includes("chicken")) {
+    suggested = pizzas.find((p) => p.name.includes("Fajita"));
+    reply = `Try our ${suggested.name} — a customer favorite!`;
+  } else {
+    reply = "Tell me what you're in the mood for — cheesy, spicy, or something else — and I'll suggest a pizza!";
+  }
+
+  res.json({ reply, suggested });
 });
 app.post("/api/orders", async (req, res) => {
   const newOrder = req.body;
