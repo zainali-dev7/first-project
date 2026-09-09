@@ -102,7 +102,7 @@ app.post("/api/orders-prisma", async (req, res) => {
     res.status(400).json({ message: "Failed", error: error.message });
   }
 });
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 app.post("/api/orders-postgres", async (req, res) => {
