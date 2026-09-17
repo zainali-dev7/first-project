@@ -11,27 +11,70 @@ interface CartProps {
   onClearCart: () => void;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 function Cart({ cart, onClearCart }: CartProps) {
   const [showCheckout, setShowCheckout] = useState(false);
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.price,
+    0
+  );
 
   async function saveOrder() {
+    // Login ke waqt localStorage mein saved user lena
+    const savedUser = localStorage.getItem("user");
+
+    let user: User | null = null;
+
+    if (savedUser) {
+      user = JSON.parse(savedUser);
+    }
+
     const order = {
+      customerName: user?.name || "Guest",
+      customerEmail: user?.email || "Guest",
       items: cart,
       total: total,
       date: new Date().toISOString(),
     };
 
-    const response = await fetch("https://first-project-production-2d14.up.railway.app/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(order),
-    });
+    try {
+      const response = await fetch(
+        "https://first-project-production-2d14.up.railway.app/api/orders",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(order),
+        }
+      );
 
-    const result = await response.json();
-    alert(result.message);
-    setShowCheckout(false);
-    onClearCart();
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(
+          result.message || "Failed to save order"
+        );
+        return;
+      }
+
+      alert(result.message);
+
+      setShowCheckout(false);
+
+      onClearCart();
+    } catch (error) {
+      console.error("Save order error:", error);
+
+      alert("Could not save order");
+    }
   }
 
   return (
@@ -39,14 +82,21 @@ function Cart({ cart, onClearCart }: CartProps) {
       <h2 className="text-xl font-semibold text-red-600 border-b-4 border-orange-400 inline-block pb-1 mb-4">
         Your Cart
       </h2>
+
       <div>
         {cart.map((item, index) => (
-          <p key={index} className="py-2 border-b border-gray-200">
+          <p
+            key={index}
+            className="py-2 border-b border-gray-200"
+          >
             {item.name} - Rs. {item.price}
           </p>
         ))}
       </div>
-      <p className="text-lg font-bold text-red-600 mt-4">Total: Rs. {total}</p>
+
+      <p className="text-lg font-bold text-red-600 mt-4">
+        Total: Rs. {total}
+      </p>
 
       {cart.length > 0 && (
         <button
@@ -68,7 +118,9 @@ function Cart({ cart, onClearCart }: CartProps) {
         <Checkout
           total={total}
           onPaymentSuccess={saveOrder}
-          onCancel={() => setShowCheckout(false)}
+          onCancel={() =>
+            setShowCheckout(false)
+          }
         />
       )}
     </div>

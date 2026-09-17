@@ -2,6 +2,8 @@ import { useState } from "react";
 import Menu from "./components/Menu";
 import AIAssistant from "./components/AIAssistant";
 import Cart from "./components/Cart";
+import Auth from "./components/Auth";
+import AdminDashboard from "./AdminDashboard";
 import "./style.css";
 
 interface Pizza {
@@ -10,8 +12,24 @@ interface Pizza {
   image: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 function App() {
   const [cart, setCart] = useState<Pizza[]>([]);
+
+  // Logged-in user ko App.tsx mein store karta hai
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem("user");
+
+    return savedUser
+      ? JSON.parse(savedUser)
+      : null;
+  });
 
   function handleAddToCart(pizza: Pizza) {
     setCart([...cart, pizza]);
@@ -24,18 +42,36 @@ function App() {
   return (
     <div className="min-h-screen bg-orange-50">
       <header className="bg-red-600 text-white text-center py-10">
-        <h1 className="text-4xl font-bold">🍕 Zain's Pizza</h1>
-        <p className="mt-2">Fresh pizzas, made with love.</p>
+        <h1 className="text-4xl font-bold">
+          🍕 Zain's Pizza
+        </h1>
+
+        <p className="mt-2">
+          Fresh pizzas, made with love.
+        </p>
       </header>
 
       <section className="max-w-4xl mx-auto mt-10 px-4">
         <h2 className="text-xl font-semibold text-red-600 border-b-4 border-orange-400 inline-block pb-1 mb-6">
           Our Menu
         </h2>
+
         <Menu onAddToCart={handleAddToCart} />
       </section>
-<AIAssistant />
-      <Cart cart={cart} onClearCart={handleClearCart} />
+
+      <AIAssistant />
+
+      <Auth onUserChange={setUser} />
+
+      {/* Sirf admin ko dashboard show hoga */}
+      {user?.role === "admin" && (
+        <AdminDashboard />
+      )}
+
+      <Cart
+        cart={cart}
+        onClearCart={handleClearCart}
+      />
     </div>
   );
 }
