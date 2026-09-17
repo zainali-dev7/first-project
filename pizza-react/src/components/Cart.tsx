@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Checkout from "./Checkout";
-
+import { API_URL } from "../config";
 interface CartItem {
   name: string;
   price: number;
@@ -46,8 +46,8 @@ function Cart({ cart, onClearCart }: CartProps) {
 
     try {
       const response = await fetch(
-        "https://first-project-production-2d14.up.railway.app/api/orders",
-        {
+  `${API_URL}/api/orders`,
+  {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

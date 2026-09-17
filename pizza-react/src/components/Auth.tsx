@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_URL } from "../config";
 
 interface User {
   id: string;
@@ -13,21 +14,16 @@ interface AuthProps {
 
 function Auth({ onUserChange }: AuthProps) {
   const [isLogin, setIsLogin] = useState(true);
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [message, setMessage] = useState("");
 
-  // Browser mein saved user ko load karta hai
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("user");
-
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  // Page reload par token backend se verify karta hai
   useEffect(() => {
     const verifyUser = async () => {
       const token = localStorage.getItem("token");
@@ -40,7 +36,7 @@ function Auth({ onUserChange }: AuthProps) {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/profile",
+          `${API_URL}/api/profile`,
           {
             method: "GET",
             headers: {
@@ -52,10 +48,8 @@ function Auth({ onUserChange }: AuthProps) {
         if (!response.ok) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
-
           setUser(null);
           onUserChange(null);
-
           return;
         }
 
@@ -85,8 +79,8 @@ function Auth({ onUserChange }: AuthProps) {
     e.preventDefault();
 
     const url = isLogin
-      ? "http://localhost:5000/api/login"
-      : "http://localhost:5000/api/signup";
+      ? `${API_URL}/api/login`
+      : `${API_URL}/api/signup`;
 
     const body = isLogin
       ? { email, password }
@@ -95,11 +89,9 @@ function Auth({ onUserChange }: AuthProps) {
     try {
       const response = await fetch(url, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify(body),
       });
 
@@ -114,7 +106,6 @@ function Auth({ onUserChange }: AuthProps) {
 
       setMessage(data.message);
 
-      // Successful login
       if (isLogin && data.token) {
         localStorage.setItem(
           "token",
@@ -127,33 +118,24 @@ function Auth({ onUserChange }: AuthProps) {
         );
 
         setUser(data.user);
-
-        // App.tsx ko logged-in user bhejta hai
         onUserChange(data.user);
       }
     } catch (error) {
       console.error(error);
-
       setMessage(
         "Could not connect to server"
       );
     }
   };
 
-  // Logout
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     setUser(null);
-
-    // App.tsx ko bhi batata hai ke user logout ho gaya
     onUserChange(null);
-
     setMessage("");
   };
 
-  // Logged-in user
   if (user) {
     return (
       <div className="max-w-md mx-auto my-10 p-6 border rounded-lg shadow text-center">
@@ -178,7 +160,6 @@ function Auth({ onUserChange }: AuthProps) {
     );
   }
 
-  // Login / Signup form
   return (
     <div className="max-w-md mx-auto my-10 p-6 border rounded-lg shadow">
       <h2 className="text-2xl font-bold mb-5">

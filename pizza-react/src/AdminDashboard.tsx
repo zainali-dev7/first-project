@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { API_URL } from "./config";
 interface PizzaItem {
   name: string;
   price: number;
@@ -32,7 +32,7 @@ function AdminDashboard() {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/admin/orders",
+  `${API_URL}/api/admin/orders`,
           {
             method: "GET",
             headers: {
