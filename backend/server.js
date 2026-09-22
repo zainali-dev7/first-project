@@ -446,25 +446,64 @@ app.post("/api/ai-suggest", async (req, res) => {
 
 // ================= MONGODB ORDERS =================
 
-app.post("/api/orders", async (req, res) => {
-  try {
-    const newOrder = req.body;
+// Sirf logged-in user order save kar sakta hai
+app.post(
+  "/api/orders",
+  verifyToken,
+  async (req, res) => {
+    try {
+      // JWT mein jo userId mila us se asli user database se lo
+      const user = await db
+        .collection("users")
+        .findOne({
+          _id: new ObjectId(req.user.userId),
+        });
 
-    await db
-      .collection("orders")
-      .insertOne(newOrder);
+      if (!user) {
+        return res.status(404).json({
+          message: "User not found",
+        });
+      }
 
-    res.json({
-      message: "Order saved successfully!",
-    });
-  } catch (error) {
-    console.error("Order error:", error);
+      // Frontend se sirf order ki actual details lo
+      const { items, total } = req.body;
 
-    res.status(500).json({
-      message: "Failed to save order",
-    });
+      if (
+        !Array.isArray(items) ||
+        items.length === 0 ||
+        typeof total !== "number"
+      ) {
+        return res.status(400).json({
+          message: "Invalid order data",
+        });
+      }
+
+      // Customer identity frontend se nahi,
+      // verified database user se banegi
+      const newOrder = {
+        customerName: user.name,
+        customerEmail: user.email,
+        items,
+        total,
+        date: new Date().toISOString(),
+      };
+
+      await db
+        .collection("orders")
+        .insertOne(newOrder);
+
+      res.json({
+        message: "Order saved successfully!",
+      });
+    } catch (error) {
+      console.error("Order error:", error);
+
+      res.status(500).json({
+        message: "Failed to save order",
+      });
+    }
   }
-});
+);
 
 // ================= PRISMA ORDERS =================
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Checkout from "./Checkout";
 import { API_URL } from "../config";
+
 interface CartItem {
   name: string;
   price: number;
@@ -11,15 +12,9 @@ interface CartProps {
   onClearCart: () => void;
 }
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
-
 function Cart({ cart, onClearCart }: CartProps) {
-  const [showCheckout, setShowCheckout] = useState(false);
+  const [showCheckout, setShowCheckout] =
+    useState(false);
 
   const total = cart.reduce(
     (sum, item) => sum + item.price,
@@ -27,30 +22,32 @@ function Cart({ cart, onClearCart }: CartProps) {
   );
 
   async function saveOrder() {
-    // Login ke waqt localStorage mein saved user lena
-    const savedUser = localStorage.getItem("user");
+    // Login ke waqt saved JWT token lena
+    const token = localStorage.getItem("token");
 
-    let user: User | null = null;
-
-    if (savedUser) {
-      user = JSON.parse(savedUser);
+    // Token nahi hai to order save nahi hoga
+    if (!token) {
+      alert("Please login before placing an order.");
+      return;
     }
 
+    // Backend ko sirf order details bhejni hain.
+    // Customer name/email backend verified JWT se nikalega.
     const order = {
-      customerName: user?.name || "Guest",
-      customerEmail: user?.email || "Guest",
       items: cart,
       total: total,
-      date: new Date().toISOString(),
     };
 
     try {
       const response = await fetch(
-  `${API_URL}/api/orders`,
-  {
+        `${API_URL}/api/orders`,
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+
+            // JWT backend ke verifyToken middleware ko bhejna
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(order),
         }
