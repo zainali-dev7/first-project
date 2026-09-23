@@ -19,35 +19,24 @@ function Auth({ onUserChange }: AuthProps) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  // User ab localStorage se load nahi hoga.
+  // Backend HttpOnly cookie verify karke user batayega.
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const verifyUser = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setUser(null);
-        onUserChange(null);
-        return;
-      }
-
       try {
         const response = await fetch(
           `${API_URL}/api/profile`,
           {
             method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+
+            // HttpOnly cookie backend ko bhejo
+            credentials: "include",
           }
         );
 
         if (!response.ok) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
           setUser(null);
           onUserChange(null);
           return;
@@ -57,16 +46,14 @@ function Auth({ onUserChange }: AuthProps) {
 
         setUser(userData);
         onUserChange(userData);
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(userData)
-        );
       } catch (error) {
         console.error(
-          "Token verification error:",
+          "Cookie verification error:",
           error
         );
+
+        setUser(null);
+        onUserChange(null);
       }
     };
 
@@ -89,9 +76,14 @@ function Auth({ onUserChange }: AuthProps) {
     try {
       const response = await fetch(url, {
         method: "POST",
+
+        // Login cookie browser receive karega
+        credentials: "include",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify(body),
       });
 
@@ -106,35 +98,48 @@ function Auth({ onUserChange }: AuthProps) {
 
       setMessage(data.message);
 
-      if (isLogin && data.token) {
-        localStorage.setItem(
-          "token",
-          data.token
-        );
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(data.user)
-        );
-
+      if (isLogin && data.user) {
+        // Token localStorage mein save nahi karna.
+        // JWT HttpOnly cookie mein backend ne save kiya hai.
         setUser(data.user);
         onUserChange(data.user);
       }
     } catch (error) {
       console.error(error);
+
       setMessage(
         "Could not connect to server"
       );
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/logout`,
+      {
+        method: "POST",
+
+        // HttpOnly cookie backend ko bhejna zaroori hai
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      setMessage("Logout failed");
+      return;
+    }
+
+    // Backend cookie delete kar chuka hai.
+    // Ab frontend se bhi logged-in user hata do.
     setUser(null);
     onUserChange(null);
     setMessage("");
-  };
+  } catch (error) {
+    console.error("Logout error:", error);
+    setMessage("Could not connect to server");
+  }
+};
 
   if (user) {
     return (

@@ -7,6 +7,7 @@ dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ObjectId } = require("mongodb");
@@ -19,8 +20,37 @@ const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// ================= MIDDLEWARE =================
+
+// Local frontend ko cookies ke saath backend access allow karta hai
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Browser ke allowed frontend origins ko access dena
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error("Not allowed by CORS")
+      );
+    },
+
+    // Browser ko authentication cookie send/receive
+    // karne ki permission
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+
+// Browser se aane wali cookies ko req.cookies mein available karta hai
+app.use(cookieParser());
 
 // ================= DATABASE CONNECTIONS =================
 
@@ -58,39 +88,29 @@ app.get("/", (req, res) => {
 
 // Protected route par JWT token check karta hai
 function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  // Authorization header nahi mila
-  if (!authHeader) {
-    return res.status(401).json({
-      message: "Access denied. No token provided.",
-    });
-  }
-
-  // "Bearer TOKEN" mein se actual TOKEN nikalta hai
-  const token = authHeader.split(" ")[1];
+  // JWT sirf HttpOnly cookie se lena hai
+  const token = req.cookies.token;
 
   if (!token) {
     return res.status(401).json({
-      message: "Access denied. Invalid token.",
+      message: "Access denied. Please login.",
     });
   }
 
   try {
-    // Token genuine aur unexpired hai ya nahi
+    // Cookie ke JWT ko verify karo
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET
     );
 
-    // Decoded JWT data request ke saath attach kar dete hain
+    // Verified user ki information next route ko dena
     req.user = decoded;
 
-    // Agle middleware/route par jao
     next();
   } catch (error) {
     return res.status(401).json({
-      message: "Invalid or expired token.",
+      message: "Invalid or expired session.",
     });
   }
 }
@@ -215,18 +235,36 @@ app.post("/api/login", async (req, res) => {
       }
     );
 
-    res.json({
-      message: "Login successful",
+    // JWT ko HttpOnly cookie mein save karo
+    res.cookie("token", token, {
+      httpOnly: true,
 
-      token,
+      // Local development mein false,
+      // Railway production mein true
+      secure: process.env.NODE_ENV === "production",
 
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role || "user",
-      },
+      // Production mein Vercel -> Railway cross-site cookie allow hogi
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
+
+      // Browser cookie bhi 1 hour baad expire hogi
+      maxAge: 60 * 60 * 1000,
     });
+
+    res.json({
+  message: "Login successful",
+
+  // JWT frontend ko expose nahi karna.
+  // Token sirf HttpOnly cookie mein rahega.
+  user: {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role || "user",
+  },
+});
   } catch (error) {
     console.error("Login error:", error);
 
@@ -234,6 +272,25 @@ app.post("/api/login", async (req, res) => {
       message: "Server error",
     });
   }
+});
+// ================= LOGOUT =================
+
+app.post("/api/logout", (req, res) => {
+  // Browser se authentication cookie delete karo
+  res.clearCookie("token", {
+    httpOnly: true,
+
+    secure: process.env.NODE_ENV === "production",
+
+    sameSite:
+      process.env.NODE_ENV === "production"
+        ? "none"
+        : "lax",
+  });
+
+  res.json({
+    message: "Logout successful",
+  });
 });
 
 // ================= PROTECTED PROFILE =================
@@ -287,6 +344,7 @@ app.get(
     });
   }
 );
+
 // ================= ADMIN ORDERS ROUTE =================
 
 // Sirf logged-in admin MongoDB ke orders dekh sakta hai

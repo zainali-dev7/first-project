@@ -22,17 +22,8 @@ function Cart({ cart, onClearCart }: CartProps) {
   );
 
   async function saveOrder() {
-    // Login ke waqt saved JWT token lena
-    const token = localStorage.getItem("token");
-
-    // Token nahi hai to order save nahi hoga
-    if (!token) {
-      alert("Please login before placing an order.");
-      return;
-    }
-
     // Backend ko sirf order details bhejni hain.
-    // Customer name/email backend verified JWT se nikalega.
+    // User identity HttpOnly JWT cookie se verify hogi.
     const order = {
       items: cart,
       total: total,
@@ -43,12 +34,14 @@ function Cart({ cart, onClearCart }: CartProps) {
         `${API_URL}/api/orders`,
         {
           method: "POST",
+
+          // HttpOnly authentication cookie backend ko bhejo
+          credentials: "include",
+
           headers: {
             "Content-Type": "application/json",
-
-            // JWT backend ke verifyToken middleware ko bhejna
-            Authorization: `Bearer ${token}`,
           },
+
           body: JSON.stringify(order),
         }
       );

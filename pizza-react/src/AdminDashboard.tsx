@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "./config";
+
 interface PizzaItem {
   name: string;
   price: number;
@@ -22,22 +23,14 @@ function AdminDashboard() {
 
   useEffect(() => {
     const loadOrders = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setMessage("You must login as admin.");
-        setLoading(false);
-        return;
-      }
-
       try {
         const response = await fetch(
-  `${API_URL}/api/admin/orders`,
+          `${API_URL}/api/admin/orders`,
           {
             method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+
+            // Admin ki HttpOnly JWT cookie backend ko bhejo
+            credentials: "include",
           }
         );
 
