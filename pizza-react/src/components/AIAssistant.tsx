@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_URL } from "../config";
 
 function AIAssistant() {
   const [message, setMessage] = useState("");
@@ -7,18 +8,38 @@ function AIAssistant() {
 
   async function handleAsk() {
     if (!message.trim()) return;
+
     setLoading(true);
     setReply("");
 
-    const response = await fetch("https://first-project-production-2d14.up.railway.app/api/ai-suggest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch(
+        `${API_URL}/api/ai-suggest`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        }
+      );
 
-    setReply(data.reply);
-    setLoading(false);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setReply(
+          data.message || "Could not get a suggestion."
+        );
+        return;
+      }
+
+      setReply(data.reply);
+    } catch (error) {
+      console.error("AI Assistant error:", error);
+      setReply("Could not connect to server.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -26,17 +47,22 @@ function AIAssistant() {
       <h2 className="text-xl font-semibold text-red-600 border-b-4 border-orange-400 inline-block pb-1 mb-4">
         🍕 Ask Our AI Assistant
       </h2>
+
       <p className="text-gray-500 text-sm mb-3">
         Tell me what you're craving, and I'll recommend a pizza!
       </p>
+
       <div className="flex gap-2 mb-3">
         <input
           type="text"
           placeholder="e.g. something spicy"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) =>
+            setMessage(e.target.value)
+          }
           className="flex-1 border border-gray-300 rounded-md p-2"
         />
+
         <button
           onClick={handleAsk}
           disabled={loading}
@@ -45,6 +71,7 @@ function AIAssistant() {
           {loading ? "..." : "Ask"}
         </button>
       </div>
+
       {reply && (
         <p className="bg-orange-50 border border-orange-200 rounded-md p-3 text-gray-700">
           {reply}
